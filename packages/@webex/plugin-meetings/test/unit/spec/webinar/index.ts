@@ -356,6 +356,20 @@ describe('plugin-meetings', () => {
           });
           assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
         });
+
+        it(`if queryString not exist, use empty string`, async () => {
+          const result = await webinar.searchWebcastAttendee(undefined);
+          assert.calledOnce(webex.request);
+          assert.calledWith(webex.request, {
+            method: "GET",
+            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=`,
+            headers: {
+              authorization: 'test-token',
+              trackingId: 'webex-js-sdk_test-uuid',
+            },
+          });
+          assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
+        });
   
         it('handles API call failures gracefully', async () => {
           webex.request.rejects(new Error('API_ERROR'));
