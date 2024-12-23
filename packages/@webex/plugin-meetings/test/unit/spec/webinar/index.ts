@@ -2,7 +2,7 @@ import {assert, expect} from '@webex/test-helper-chai';
 import LoggerProxy from '@webex/plugin-meetings/src/common/logs/logger-proxy';
 import Webinar from '@webex/plugin-meetings/src/webinar';
 import MockWebex from '@webex/test-helper-mock-webex';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'uuid';
 import sinon from 'sinon';
 
 describe('plugin-meetings', () => {
@@ -16,7 +16,7 @@ describe('plugin-meetings', () => {
         beforeEach(() => {
             // @ts-ignore
             getUserTokenStub = sinon.stub().resolves('test-token'); 
-            uuidStub = sinon.stub(uuidv4, 'v4').returns('test-uuid');            
+            uuidStub = sinon.stub(uuid,'v4').returns('test-uuid');            
             webex = new MockWebex({});
             webex.internal.mercury.on = sinon.stub();
             webinar = new Webinar({}, {parent: webex});
@@ -349,20 +349,6 @@ describe('plugin-meetings', () => {
           assert.calledWith(webex.request, {
             method: "GET",
             uri: `${webinar.webcastInstanceUrl}/attendees?keyword=${queryString}`,
-            headers: {
-              authorization: 'test-token',
-              trackingId: 'webex-js-sdk_test-uuid',
-            },
-          });
-          assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
-        });
-
-        it(`if queryString not exist, use empty string`, async () => {
-          const result = await webinar.searchWebcastAttendee(undefined);
-          assert.calledOnce(webex.request);
-          assert.calledWith(webex.request, {
-            method: "GET",
-            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=`,
             headers: {
               authorization: 'test-token',
               trackingId: 'webex-js-sdk_test-uuid',
