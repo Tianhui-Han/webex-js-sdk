@@ -112,6 +112,13 @@ const Webinar = WebexPlugin.extend({
    * @returns {Promise}
    */
   async startWebcast(meeting, layout) {
+    if (!meeting) {
+      LoggerProxy.logger.error(
+        `Meeting:webinar#startWebcast failed --> meeting parameter : ${meeting}`
+      );
+      throw new Error('Meeting parameter does not meet expectations');
+    }
+
     return this.request({
       method: HTTP_VERBS.PUT,
       uri: `${this.webcastInstanceUrl}/streaming`,
@@ -203,20 +210,39 @@ const Webinar = WebexPlugin.extend({
   },
 
   /**
-   * search webcast attendee by query string
+   * view all webcast attendees
    * @param {string} queryString
    * @returns {Promise}
    */
-  async searchWebcastAttendee(queryString = '') {
+  async viewAllWebcastAttendees() {
     return this.request({
       method: HTTP_VERBS.GET,
-      uri: `${this.webcastInstanceUrl}/attendees?keyword=${queryString}`,
+      uri: `${this.webcastInstanceUrl}/attendees`,
       headers: {
         authorization: await this.webex.credentials.getUserToken(),
         trackingId: `${config.trackingIdPrefix}_${uuid.v4().toString()}`,
       },
     }).catch((error) => {
-      LoggerProxy.logger.error('Meeting:webinar#searchWebcastAttendee failed', error);
+      LoggerProxy.logger.error('Meeting:webinar#viewAllWebcastAttendees failed', error);
+      throw error;
+    });
+  },
+
+  /**
+   * search webcast attendees by query string
+   * @param {string} queryString
+   * @returns {Promise}
+   */
+  async searchWebcastAttendees(queryString = '') {
+    return this.request({
+      method: HTTP_VERBS.GET,
+      uri: `${this.webcastInstanceUrl}/attendees?keyword=${encodeURIComponent(queryString)}`,
+      headers: {
+        authorization: await this.webex.credentials.getUserToken(),
+        trackingId: `${config.trackingIdPrefix}_${uuid.v4().toString()}`,
+      },
+    }).catch((error) => {
+      LoggerProxy.logger.error('Meeting:webinar#searchWebcastAttendees failed', error);
       throw error;
     });
   },

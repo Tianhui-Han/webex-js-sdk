@@ -213,6 +213,21 @@ describe('plugin-meetings', () => {
           assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
         });
 
+        it('should handle undefined meeting parameter', async () => {
+          const errorLogger = sinon.stub(LoggerProxy.logger, 'error');
+
+          try {
+            await webinar.startWebcast(undefined, layout);
+            assert.fail('startWebcast should throw an error');
+          } catch (error) {
+            assert.equal(error.message, 'Meeting parameter does not meet expectations', 'should throw the correct error');
+            assert.calledOnce(errorLogger);
+            assert.calledWith(errorLogger, `Meeting:webinar#startWebcast failed --> meeting parameter : ${undefined}`);
+          } finally {
+            errorLogger.restore();
+          }
+        });
+
         it('handles API call failures gracefully', async () => {
           webex.request.rejects(new Error('API_ERROR'));
           const errorLogger = sinon.stub(LoggerProxy.logger, 'error');
@@ -224,9 +239,9 @@ describe('plugin-meetings', () => {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
             assert.calledWith(errorLogger, 'Meeting:webinar#startWebcast failed', sinon.match.instanceOf(Error));
+          } finally {
+            errorLogger.restore();
           }
-
-          errorLogger.restore();
         });
       });
 
@@ -260,9 +275,9 @@ describe('plugin-meetings', () => {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
             assert.calledWith(errorLogger, 'Meeting:webinar#stopWebcast failed', sinon.match.instanceOf(Error));
-          }
-  
-          errorLogger.restore();
+          } finally {
+            errorLogger.restore();
+          }  
         });
       });
 
@@ -293,9 +308,9 @@ describe('plugin-meetings', () => {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
             assert.calledWith(errorLogger, 'Meeting:webinar#queryWebcastLayout failed', sinon.match.instanceOf(Error));
-          }
-  
-          errorLogger.restore();
+          } finally {
+            errorLogger.restore();
+          }  
         });
       });
 
@@ -335,20 +350,84 @@ describe('plugin-meetings', () => {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
             assert.calledWith(errorLogger, 'Meeting:webinar#updateWebcastLayout failed', sinon.match.instanceOf(Error));
-          }
-  
-          errorLogger.restore();
+          } finally {
+            errorLogger.restore();
+          }  
         });
       });
       
-      describe("#searchWebcastAttendee", () => {
-        const queryString = 'queryString'
-        it(`sends a GET request to search the webcast attendee`, async () => {
-          const result = await webinar.searchWebcastAttendee(queryString);
+      describe("#searchWebcastAttendees", () => {
+        const queryString = 'queryString';
+        const specialCharsQuery = 'query@string!';
+        const emptyQuery = '';
+      
+        it("sends a GET request to search the webcast attendees", async () => {
+          const result = await webinar.searchWebcastAttendees(queryString);
           assert.calledOnce(webex.request);
           assert.calledWith(webex.request, {
             method: "GET",
-            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=${queryString}`,
+            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=${encodeURIComponent(queryString)}`,
+            headers: {
+              authorization: 'test-token',
+              trackingId: 'webex-js-sdk_test-uuid',
+            },
+          });
+          assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
+        });
+      
+        it('handles API call failures gracefully', async () => {
+          webex.request.rejects(new Error('API_ERROR'));
+          const errorLogger = sinon.stub(LoggerProxy.logger, 'error');
+      
+          try {
+            await webinar.searchWebcastAttendees(queryString);
+            assert.fail('searchWebcastAttendees should throw an error');
+          } catch (error) {
+            assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
+            assert.calledOnce(errorLogger);
+            assert.calledWith(errorLogger, 'Meeting:webinar#searchWebcastAttendees failed', sinon.match.instanceOf(Error));
+          } finally {
+            errorLogger.restore();
+          }
+        });
+      
+        it("should handle empty query string", async () => {
+          const result = await webinar.searchWebcastAttendees(emptyQuery);
+          assert.calledOnce(webex.request);
+          assert.calledWith(webex.request, {
+            method: "GET",
+            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=${encodeURIComponent(emptyQuery)}`,
+            headers: {
+              authorization: 'test-token',
+              trackingId: 'webex-js-sdk_test-uuid',
+            },
+          });
+          assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
+        });
+      
+        it("should handle query string with special characters", async () => {
+          const result = await webinar.searchWebcastAttendees(specialCharsQuery);
+          assert.calledOnce(webex.request);
+          assert.calledWith(webex.request, {
+            method: "GET",
+            uri: `${webinar.webcastInstanceUrl}/attendees?keyword=${encodeURIComponent(specialCharsQuery)}`,
+            headers: {
+              authorization: 'test-token',
+              trackingId: 'webex-js-sdk_test-uuid',
+            },
+          });
+          assert.equal(result, "REQUEST_RETURN_VALUE", "should return the resolved value from the request");
+        });
+      });
+      
+
+      describe("#viewAllWebcastAttendees", () => {
+        it(`sends a GET request to view all the webcast attendees`, async () => {
+          const result = await webinar.viewAllWebcastAttendees();
+          assert.calledOnce(webex.request);
+          assert.calledWith(webex.request, {
+            method: "GET",
+            uri: `${webinar.webcastInstanceUrl}/attendees`,
             headers: {
               authorization: 'test-token',
               trackingId: 'webex-js-sdk_test-uuid',
@@ -362,15 +441,15 @@ describe('plugin-meetings', () => {
           const errorLogger = sinon.stub(LoggerProxy.logger, 'error');
   
           try {
-            await webinar.searchWebcastAttendee(queryString);
-            assert.fail('searchWebcastAttendee should throw an error');
+            await webinar.viewAllWebcastAttendees();
+            assert.fail('viewAllWebcastAttendees should throw an error');
           } catch (error) {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
-            assert.calledWith(errorLogger, 'Meeting:webinar#searchWebcastAttendee failed', sinon.match.instanceOf(Error));
-          }
-  
-          errorLogger.restore();
+            assert.calledWith(errorLogger, 'Meeting:webinar#viewAllWebcastAttendees failed', sinon.match.instanceOf(Error));
+          } finally {
+            errorLogger.restore();
+          }  
         });
       });
             
@@ -401,9 +480,9 @@ describe('plugin-meetings', () => {
             assert.equal(error.message, 'API_ERROR', 'should throw the correct error');
             assert.calledOnce(errorLogger);
             assert.calledWith(errorLogger, 'Meeting:webinar#expelWebcastAttendee failed', sinon.match.instanceOf(Error));
+          } finally {
+            errorLogger.restore();
           }
-  
-          errorLogger.restore();
         });
       });
     })
